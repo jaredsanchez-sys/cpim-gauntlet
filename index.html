@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<title>CPIM Gauntlet</title>
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CPIM">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#0f172a;
+  --bg2:#141e33;
+  --card:#1a2540;
+  --border:#263557;
+  --accent:#3b82f6;
+  --accent-dim:#1e3a6b;
+  --text:#f8fafc;
+  --text-dim:#94a3b8;
+  --green:#22c55e;
+  --red:#ef4444;
+  --radius:12px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  overscroll-behavior-y:none;
+  width:100%;
+  min-height:100vh;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+#app{
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+}
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:var(--bg);
+  padding:calc(12px + env(safe-area-inset-top)) 16px 10px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.topbar h1{
+  font-size:18px;
+  margin:0;
+  font-weight:700;
+  letter-spacing:0.3px;
+}
+.topbar .sub{
+  font-size:12px;
+  color:var(--text-dim);
+}
+main{
+  flex:1;
+  overflow-y:auto;
+  padding:16px 16px calc(84px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling:touch;
+}
+.view{display:none;}
+.view.active{display:block;}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:0 2px 10px rgba(0,0,0,0.25);
+  padding:14px;
+  margin-bottom:14px;
+}
+
+/* ---------- Dashboard ---------- */
+.player-card{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.player-avatar{
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),#1e40af);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;flex-shrink:0;
+}
+.player-info{flex:1;min-width:0;}
+.player-name{font-size:17px;font-weight:700;}
+.player-rank{color:var(--accent);font-size:13px;font-weight:600;margin-top:2px;}
+.xp-bar-track{
+  background:var(--bg2);
+  border-radius:8px;
+  height:10px;
+  overflow:hidden;
+  margin-top:8px;
+  border:1px solid var(--border);
+}
+.xp-bar-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--accent),#60a5fa);
+  border-radius:8px;
+  transition:width 0.3s ease;
+}
+.xp-label{font-size:11px;color:var(--text-dim);margin-top:4px;}
+.xp-controls{display:flex;gap:8px;margin-top:10px;}
+.xp-controls button{flex:1;}
+
+.section-title{
+  font-size:13px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.6px;
+  color:var(--text-dim);
+  margin:20px 0 10px;
+}
+.section-title:first-child{margin-top:0;}
+
+.zone-progress-track{
+  background:var(--bg2);
+  border-radius:8px;
+  height:14px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.zone-progress-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--green),#4ade80);
+  transition:width 0.3s ease;
+}
+.zone-progress-label{text-align:center;font-size:13px;margin-top:8px;color:var(--text-dim);}
+
+.streak-card{
+  display:flex;align-items:center;justify-content:space-between;
+}
+.streak-count{font-size:28px;font-weight:800;color:var(--accent);}
+.streak-controls{display:flex;gap:8px;}
+
+.zone-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+.zone-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:10px 8px;
+  text-align:center;
+  position:relative;
+  cursor:pointer;
+}
+.zone-card.cleared{border-color:var(--green);background:rgba(34,197,94,0.08);}
+.zone-card.current{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim);}
+.zone-card.locked{opacity:0.45;}
+.zone-icon{font-size:24px;}
+.zone-name{font-size:11px;font-weight:600;margin-top:4px;line-height:1.25;}
+.zone-weight{font-size:10px;color:var(--text-dim);margin-top:2px;}
+.zone-badge{
+  position:absolute;top:4px;right:6px;font-size:11px;
+}
+
+.rank-ladder{display:flex;flex-direction:column;gap:6px;}
+.rank-row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--card);
+}
+.rank-row.achieved{border-color:var(--accent);background:rgba(59,130,246,0.08);}
+.rank-icon{font-size:18px;width:22px;text-align:center;}
+.rank-name{flex:1;font-size:13px;font-weight:600;}
+.rank-xp{font-size:11px;color:var(--text-dim);}
+
+button{
+  font-family:inherit;
+  border:none;
+  border-radius:8px;
+  background:var(--accent);
+  color:#fff;
+  padding:10px 14px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+}
+button.ghost{
+  background:var(--card);
+  border:1px solid var(--border);
+  color:var(--text);
+}
+button.small{padding:6px 10px;font-size:13px;}
+button:active{opacity:0.75;}
+
+/* ---------- Flashcards ---------- */
+.flash-controls{
+  display:flex;gap:8px;align-items:center;margin-bottom:12px;
+}
+.flash-controls select{
+  flex:1;
+  background:var(--card);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:9px 10px;
+  font-size:13px;
+}
+.flash-counter{
+  font-size:12px;color:var(--text-dim);text-align:center;margin-bottom:8px;
+}
+.flash-progress-track{
+  height:4px;background:var(--bg2);border-radius:4px;overflow:hidden;margin-bottom:16px;
+}
+.flash-progress-fill{height:100%;background:var(--accent);transition:width 0.2s ease;}
+
+.flip-scene{
+  perspective:1200px;
+  height:320px;
+  margin-bottom:16px;
+}
+.flip-card{
+  position:relative;
+  width:100%;height:100%;
+  transform-style:preserve-3d;
+  transition:transform 0.4s cubic-bezier(.4,.2,.2,1);
+  cursor:pointer;
+}
+.flip-card.flipped{transform:rotateY(180deg);}
+.flip-face{
+  position:absolute;inset:0;
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
+  border-radius:16px;
+  border:1px solid var(--border);
+  background:var(--card);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  text-align:center;
+  box-shadow:0 4px 16px rgba(0,0,0,0.35);
+}
+.flip-face .tag{
+  position:absolute;top:12px;left:12px;
+  font-size:10px;font-weight:700;letter-spacing:0.4px;
+  color:var(--accent);background:var(--accent-dim);
+  padding:3px 8px;border-radius:6px;text-transform:uppercase;
+}
+.flip-face .hint{
+  position:absolute;bottom:12px;font-size:11px;color:var(--text-dim);
+}
+.flip-face .content{font-size:17px;line-height:1.4;font-weight:600;overflow-y:auto;max-height:100%;}
+.flip-back{transform:rotateY(180deg);}
+.flip-back .content{font-size:15px;font-weight:400;color:var(--text);}
+
+.flash-nav{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;
+}
+.flash-nav button{flex:0 0 auto;width:46px;height:46px;border-radius:50%;font-size:18px;}
+.flash-marks{display:flex;gap:10px;flex:1;justify-content:center;}
+.flash-marks button{flex:1;max-width:120px;font-size:20px;padding:10px;}
+.mark-got{background:var(--green);}
+.mark-missed{background:var(--red);}
+
+.flash-score{
+  text-align:center;padding:30px 16px;
+}
+.flash-score .big{font-size:40px;font-weight:800;color:var(--accent);}
+
+/* ---------- Formulas ---------- */
+.search-bar{
+  width:100%;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:11px 14px;
+  color:var(--text);
+  font-size:14px;
+  margin-bottom:16px;
+}
+.search-bar::placeholder{color:var(--text-dim);}
+
+.formula-domain-title{
+  font-size:14px;font-weight:700;color:var(--accent);
+  margin:22px 0 10px;
+  padding-bottom:6px;
+  border-bottom:1px solid var(--border);
+}
+.formula-domain-title:first-of-type{margin-top:0;}
+.formula-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px;
+  margin-bottom:10px;
+  transition:border-color 0.2s;
+}
+.formula-card.copied{border-color:var(--green);}
+.formula-title{font-size:14px;font-weight:700;margin-bottom:8px;}
+.formula-block{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:13px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 12px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  color:#93c5fd;
+  line-height:1.6;
+}
+.formula-notes{margin-top:8px;}
+.formula-note{font-size:12px;color:var(--text-dim);margin-top:4px;line-height:1.4;}
+.copy-hint{font-size:10px;color:var(--text-dim);margin-top:6px;text-align:right;}
+
+/* ---------- Glossary ---------- */
+.glossary-wrap{position:relative;}
+.glossary-list{padding-right:26px;}
+.glossary-letter-header{
+  font-size:13px;font-weight:800;color:var(--accent);
+  margin:18px 0 8px;
+}
+.glossary-letter-header:first-of-type{margin-top:0;}
+.glossary-term-card{
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.glossary-term{font-weight:700;font-size:14px;}
+.glossary-def{font-size:13px;margin-top:4px;line-height:1.45;color:var(--text);}
+.glossary-anchor{font-size:12px;margin-top:6px;line-height:1.4;color:var(--text-dim);font-style:italic;}
+.az-rail{
+  position:fixed;
+  right:4px;
+  top:50%;
+  transform:translateY(-50%);
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  z-index:5;
+}
+.az-rail span{
+  font-size:10px;
+  color:var(--text-dim);
+  padding:1px 4px;
+  cursor:pointer;
+}
+.az-rail span.disabled{opacity:0.25;}
+
+/* ---------- Resources ---------- */
+.resource-category-title{
+  font-size:14px;font-weight:700;color:var(--accent);
+  margin:20px 0 10px;
+}
+.resource-category-title:first-of-type{margin-top:0;}
+.resource-card{
+  display:block;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px;
+  margin-bottom:10px;
+  text-decoration:none;
+  color:var(--text);
+}
+.resource-name{font-weight:700;font-size:14px;}
+.resource-desc{font-size:12px;color:var(--text-dim);margin-top:4px;line-height:1.4;}
+.resource-arrow{float:right;color:var(--accent);}
+
+/* ---------- Bottom nav ---------- */
+.bottomnav{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  max-width:480px;
+  margin:0 auto;
+  background:rgba(15,23,42,0.96);
+  backdrop-filter:blur(10px);
+  border-top:1px solid var(--border);
+  display:flex;
+  padding-bottom:env(safe-area-inset-bottom);
+  z-index:20;
+}
+.nav-btn{
+  flex:1;
+  background:transparent;
+  border:none;
+  color:var(--text-dim);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  padding:9px 4px 8px;
+  font-size:10px;
+  font-weight:600;
+  border-radius:0;
+}
+.nav-btn .icon{font-size:20px;}
+.nav-btn.active{color:var(--accent);}
+.nav-btn:active{opacity:0.7;}
+
+.empty-state{
+  text-align:center;color:var(--text-dim);font-size:13px;padding:30px 0;
+}
+
+@media (min-width:480px){
+  .az-rail{right:calc(50% - 232px);}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <h1 id="topbar-title">🏠 Dashboard</h1>
+    <span class="sub" id="topbar-sub"></span>
+  </header>
+
+  <main id="views">
+
+    <!-- DASHBOARD -->
+    <section class="view active" id="view-dashboard">
+      <div class="card player-card">
+        <div class="player-avatar">🪖</div>
+        <div class="player-info">
+          <div class="player-name" id="dash-name">Jared</div>
+          <div class="player-rank" id="dash-rank">Recruit</div>
+          <div class="xp-bar-track"><div class="xp-bar-fill" id="dash-xp-fill" style="width:0%"></div></div>
+          <div class="xp-label" id="dash-xp-label">0 / 500 XP</div>
+        </div>
+      </div>
+      <div class="card xp-controls">
+        <button class="ghost" id="xp-minus">− 50 XP</button>
+        <button id="xp-plus">+ 50 XP</button>
+      </div>
+
+      <div class="section-title">Zone Progress</div>
+      <div class="card">
+        <div class="zone-progress-track"><div class="zone-progress-fill" id="zone-progress-fill" style="width:0%"></div></div>
+        <div class="zone-progress-label" id="zone-progress-label">0 / 9 zones cleared</div>
+      </div>
+
+      <div class="section-title">Streak</div>
+      <div class="card streak-card">
+        <div>
+          <div class="streak-count" id="streak-count">0</div>
+          <div class="xp-label">days studied in a row</div>
+        </div>
+        <div class="streak-controls">
+          <button class="ghost small" id="streak-minus">−1</button>
+          <button class="small" id="streak-plus">+1</button>
+        </div>
+      </div>
+
+      <div class="section-title">Zone Map</div>
+      <div class="zone-grid" id="zone-grid"></div>
+
+      <div class="section-title">Rank Ladder</div>
+      <div class="rank-ladder" id="rank-ladder"></div>
+    </section>
+
+    <!-- FLASHCARDS -->
+    <section class="view" id="view-flashcards">
+      <div class="flash-controls">
+        <select id="flash-filter"></select>
+        <button class="ghost small" id="flash-shuffle">🔀</button>
+      </div>
+      <div class="flash-counter" id="flash-counter">0/0</div>
+      <div class="flash-progress-track"><div class="flash-progress-fill" id="flash-progress-fill" style="width:0%"></div></div>
+
+      <div id="flash-deck-wrap">
+        <div class="flip-scene" id="flip-scene">
+          <div class="flip-card" id="flip-card">
+            <div class="flip-face flip-front">
+              <span class="tag" id="flash-tag-front"></span>
+              <div class="content" id="flash-front-text"></div>
+              <span class="hint">tap to flip</span>
+            </div>
+            <div class="flip-face flip-back">
+              <span class="tag" id="flash-tag-back"></span>
+              <div class="content" id="flash-back-text"></div>
+              <span class="hint">tap to flip back</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flash-nav">
+          <button class="ghost" id="flash-prev">←</button>
+          <div class="flash-marks">
+            <button class="mark-missed" id="flash-missed">❌</button>
+            <button class="mark-got" id="flash-got">✅</button>
+          </div>
+          <button class="ghost" id="flash-next">→</button>
+        </div>
+      </div>
+
+      <div id="flash-score-wrap" style="display:none;"></div>
+    </section>
+
+    <!-- FORMULAS -->
+    <section class="view" id="view-formulas">
+      <input type="text" class="search-bar" id="formula-search" placeholder="Search formulas…">
+      <div id="formula-list"></div>
+    </section>
+
+    <!-- GLOSSARY -->
+    <section class="view" id="view-glossary">
+      <input type="text" class="search-bar" id="glossary-search" placeholder="Search glossary…">
+      <div class="glossary-wrap">
+        <div class="glossary-list" id="glossary-list"></div>
+      </div>
+    </section>
+    <div class="az-rail" id="az-rail"></div>
+
+    <!-- RESOURCES -->
+    <section class="view" id="view-resources">
+      <div id="resource-list"></div>
+    </section>
+
+  </main>
+
+  <nav class="bottomnav">
+    <button class="nav-btn active" data-view="dashboard"><span class="icon">🏠</span><span>Dashboard</span></button>
+    <button class="nav-btn" data-view="flashcards"><span class="icon">🃏</span><span>Cards</span></button>
+    <button class="nav-btn" data-view="formulas"><span class="icon">📐</span><span>Formulas</span></button>
+    <button class="nav-btn" data-view="glossary"><span class="icon">📖</span><span>Glossary</span></button>
+    <button class="nav-btn" data-view="resources"><span class="icon">🔗</span><span>Resources</span></button>
+  </nav>
+
+</div>
+
+<script type="application/json" id="app-data">
+{"cards": [{"f": "What does CPIM stand for?", "b": "Certified in Planning and Inventory Management — administered by ASCM (formerly APICS).", "t": "Admin"}, {"f": "What is the CPIM exam format?", "b": "150 multiple-choice questions (130 scored + 20 unscored pretest). 3.5 hours. Passing score: 300 on a 200–350 scale.", "t": "Admin"}, {"f": "What is the highest-weight domain on the CPIM exam?", "b": "Inventory Management at 14%.", "t": "Admin"}, {"f": "What are the 9 CPIM content domains?", "b": "I. Supply Chain Strategy (12%) | II. S&OP (10%) | III. Demand Planning (12%) | IV. Internal Supply (12%) | V. External Supply (11%) | VI. Inventory Management (14%) | VII. Detailed Scheduling (12%) | VIII. Distribution (8%) | IX. Quality & Technology (9%)", "t": "Admin"}, {"f": "What is the Bullwhip Effect?", "b": "The amplification of demand variability as you move upstream in the supply chain. Small changes in customer demand → large swings in upstream orders. Caused by: forecast errors, order batching, price fluctuations, shortage gaming.", "t": "Strategy"}, {"f": "What is ISCM?", "b": "Integrated Supply Chain Management. Managing the full chain — supplier to customer — as a single system rather than independent functions.", "t": "Strategy"}, {"f": "What are the four competitive priorities in operations strategy?", "b": "Cost, Quality, Delivery/Speed, Flexibility. A company cannot maximize all four — it must choose where to compete.", "t": "Strategy"}, {"f": "What is the difference between a make-to-stock (MTS) and make-to-order (MTO) environment?", "b": "MTS: produce to inventory based on forecast. Lower lead time but carries inventory risk. MTO: produce only on receipt of customer order. No finished goods inventory but longer lead time.", "t": "Strategy"}, {"f": "What is assemble-to-order (ATO)?", "b": "Subassemblies are stocked; final assembly begins only when a customer order is received. Balances lead time and inventory investment. Common in configure-to-order products.", "t": "Strategy"}, {"f": "What is engineer-to-order (ETO)?", "b": "Product is designed AND built to customer specifications after order receipt. Longest lead time. Each order is unique.", "t": "Strategy"}, {"f": "What is supply chain risk management?", "b": "Identifying, assessing, and mitigating risks across the supply chain. Includes: supply risk (single-source), demand risk (volatility), operational risk (disruptions), financial risk.", "t": "Strategy"}, {"f": "What are the 5 steps of the S&OP process?", "b": "1. Gather data | 2. Demand planning | 3. Supply planning | 4. Pre-S&OP meeting (reconcile) | 5. Executive S&OP meeting (approve plan)", "t": "SOP"}, {"f": "What is a chase production strategy?", "b": "Vary production rate to match demand — hire/fire, overtime, subcontract as needed. Low inventory, high workforce variability.", "t": "SOP"}, {"f": "What is a level production strategy?", "b": "Maintain a constant production rate regardless of demand. Absorb fluctuations through inventory. Low workforce variability, high inventory costs.", "t": "SOP"}, {"f": "What is a hybrid production strategy?", "b": "Combination of chase and level. Set a base production rate and use overtime, subcontracting, or inventory to handle peaks.", "t": "SOP"}, {"f": "What is Rough-Cut Capacity Planning (RCCP)?", "b": "A high-level check on whether the Master Production Schedule (MPS) is feasible given key resource constraints. Done before MRP. Less detailed than CRP.", "t": "SOP"}, {"f": "What is aggregate planning?", "b": "A medium-term (3–18 months) plan that determines production rates, workforce levels, and inventory to meet forecasted demand at minimum cost.", "t": "SOP"}, {"f": "What is a planning bill of materials?", "b": "A special BOM used in S&OP to represent a product family with average option percentages. Used for capacity planning — not for actual production orders.", "t": "SOP"}, {"f": "What is independent demand?", "b": "Demand for an item that is not derived from demand for another item. Finished goods facing customer demand are independent. Forecasted, not calculated.", "t": "Demand"}, {"f": "What is dependent demand?", "b": "Demand that is derived from the demand for a parent item. Component parts and subassemblies have dependent demand. Calculated via MRP, not forecasted.", "t": "Demand"}, {"f": "What is Simple Moving Average (SMA)?", "b": "SMA = sum of actual demand for n periods / n. Gives equal weight to all n periods. Best for stable demand with no trend or seasonality.", "t": "Demand"}, {"f": "What is Weighted Moving Average (WMA)?", "b": "SMA variation where more recent periods are given higher weights. Weights must sum to 1.0. More responsive than SMA.", "t": "Demand"}, {"f": "What is exponential smoothing?", "b": "Fₜ = α × Aₜ₋₁ + (1 − α) × Fₜ₋₁. High alpha (close to 1) = more reactive to recent data. Low alpha (close to 0) = smoother, follows trend less. Best for stable demand.", "t": "Demand"}, {"f": "What does MAD measure?", "b": "Mean Absolute Deviation. Average of absolute forecast errors: MAD = Σ|Actual − Forecast| / n. Measures forecast accuracy — lower = better.", "t": "Demand"}, {"f": "What does MAPE measure?", "b": "Mean Absolute Percentage Error. Expresses forecast error as a percentage: MAPE = (Σ(|Actual − Forecast| / Actual) / n) × 100%. Useful for comparing products of different scale.", "t": "Demand"}, {"f": "What is the Tracking Signal?", "b": "Tracking Signal = RSFE / MAD. RSFE = Running Sum of Forecast Errors. Acceptable range: −4 to +4. Outside this → forecast model needs review.", "t": "Demand"}, {"f": "A tracking signal of +6 indicates what?", "b": "Forecast is consistently too low (underpredicting). Actual demand is running above the forecast. Investigate: trend not captured? Seasonal spike?", "t": "Demand"}, {"f": "What is CPFR?", "b": "Collaborative Planning, Forecasting and Replenishment. A process where supply chain partners share data and jointly develop forecasts. Reduces bullwhip effect.", "t": "Demand"}, {"f": "What is the Master Production Schedule (MPS)?", "b": "A time-phased plan specifying how many of each end item will be produced and when. Drives MRP. Balanced against demand and capacity.", "t": "InternalSupply"}, {"f": "What is Available-to-Promise (ATP)?", "b": "The uncommitted portion of inventory and planned production. Tells order management what quantity can be promised to customers. ATP = MPS − booked customer orders.", "t": "InternalSupply"}, {"f": "What is a planning time fence (PTF)?", "b": "The period inside which the master scheduler has authority to make changes to the MPS. Inside the PTF, changes require management approval.", "t": "InternalSupply"}, {"f": "What is a demand time fence (DTF)?", "b": "The shortest period in the MPS. Inside the DTF, customer orders drive the plan — forecasts are typically not used. Changes are very restricted.", "t": "InternalSupply"}, {"f": "What is Material Requirements Planning (MRP)?", "b": "A system that calculates what materials are needed, how much, and when — based on the MPS, BOM, and inventory records. Converts end-item demand into component requirements.", "t": "InternalSupply"}, {"f": "What are the three inputs to MRP?", "b": "1. Master Production Schedule (MPS) — what finished goods are needed and when | 2. Bill of Materials (BOM) — what components make up each product | 3. Inventory Status Records — current on-hand and scheduled receipts", "t": "InternalSupply"}, {"f": "What is the MRP Net Requirements formula?", "b": "Net Requirements = Gross Requirements − Scheduled Receipts − Projected On-Hand Inventory. If result is negative, Net Requirements = 0 (no order needed).", "t": "InternalSupply"}, {"f": "What is a planned order release?", "b": "An MRP-generated order that is shifted back from the planned order receipt date by the item's lead time. It triggers purchasing (PO) or production (work order).", "t": "InternalSupply"}, {"f": "What is low-level coding in BOM?", "b": "Assigning each component the lowest level at which it appears in any BOM structure. Ensures MRP processes each item only once, at the correct level.", "t": "InternalSupply"}, {"f": "What is Capacity Requirements Planning (CRP)?", "b": "Detailed capacity planning that verifies whether planned production orders (from MRP) can be executed with available capacity. More detailed than RCCP.", "t": "InternalSupply"}, {"f": "What are the four components of manufacturing lead time?", "b": "1. Setup time | 2. Run time (processing) | 3. Queue time (waiting before a work center) | 4. Move time (transit between work centers). Queue time is typically the largest.", "t": "InternalSupply"}, {"f": "What is lot-for-lot (LFL) lot sizing?", "b": "Order exactly what is needed for each period. No excess inventory is carried. Minimizes carrying costs but may increase ordering costs.", "t": "InternalSupply"}, {"f": "What is Economic Order Quantity (EOQ)?", "b": "EOQ = √(2DS/H). D = annual demand, S = order cost per order, H = holding cost per unit per year. Minimizes total ordering + holding cost.", "t": "Inventory"}, {"f": "What cost trade-off does EOQ balance?", "b": "Ordering costs (decrease as Q increases) vs. holding/carrying costs (increase as Q increases). EOQ is where these two costs are equal.", "t": "Inventory"}, {"f": "What is the Reorder Point (ROP)?", "b": "ROP = (Average daily demand × Lead time) + Safety Stock. When inventory drops to this level, place an order.", "t": "Inventory"}, {"f": "What is Safety Stock?", "b": "Buffer inventory held to protect against demand variability and supply uncertainty. Statistical method: SS = Z × σ_LT. Higher service level = higher Z = more safety stock.", "t": "Inventory"}, {"f": "What does a Z-score of 1.65 represent for safety stock?", "b": "95% service level. 5% probability of stockout during lead time.", "t": "Inventory"}, {"f": "What is ABC classification?", "b": "A items: top 20% of SKUs, ~80% of inventory value — tightest control. B items: middle 30%, ~15% value. C items: bottom 50%, ~5% value. Priority management.", "t": "Inventory"}, {"f": "What are the components of inventory carrying costs?", "b": "Capital cost (opportunity cost of money tied up), storage/space cost, handling cost, obsolescence risk, shrinkage/damage, insurance/taxes. Typically 20–40% of inventory value annually.", "t": "Inventory"}, {"f": "What is inventory turnover?", "b": "Inventory Turns = COGS / Average Inventory Value. Higher turns = inventory moving faster. Lower turns = slow-moving or excess inventory.", "t": "Inventory"}, {"f": "What is Days of Supply (DOS)?", "b": "DOS = On-Hand Inventory / Average Daily Demand. Or: 365 / Inventory Turns. How many days of current demand the inventory will last.", "t": "Inventory"}, {"f": "What is cycle stock?", "b": "The portion of inventory that is regularly consumed and replenished in the normal order cycle. Average cycle stock = Order Quantity / 2.", "t": "Inventory"}, {"f": "What is pipeline inventory?", "b": "Inventory that is in transit — ordered but not yet received. Also called in-transit inventory. Increases with longer lead times.", "t": "Inventory"}, {"f": "What is hedge inventory?", "b": "Extra stock held in anticipation of a price increase, shortage, or supply disruption. A strategic decision, not a safety stock calculation.", "t": "Inventory"}, {"f": "What is cycle counting?", "b": "A method of checking inventory accuracy where a subset of SKUs is counted on a rotating schedule rather than shutting down for an annual physical inventory. A-items are counted most frequently.", "t": "Inventory"}, {"f": "What is shrinkage in inventory?", "b": "Loss of inventory due to theft, damage, spoilage, or administrative error. A cost component of carrying costs.", "t": "Inventory"}, {"f": "What is the Theory of Constraints (TOC)?", "b": "A management philosophy that identifies the single most limiting constraint (bottleneck) in a system and focuses all improvement efforts there. Created by Eli Goldratt ('The Goal').", "t": "Scheduling"}, {"f": "What are the 5 focusing steps of TOC?", "b": "1. Identify the constraint | 2. Exploit the constraint (maximize its output) | 3. Subordinate everything else to the constraint | 4. Elevate the constraint (increase its capacity) | 5. Repeat — find the next constraint.", "t": "Scheduling"}, {"f": "What is Drum-Buffer-Rope (DBR)?", "b": "A TOC scheduling method. Drum = the constraint (sets the pace). Buffer = time/inventory buffer protecting the constraint. Rope = the release mechanism that ties material release to the drum's pace.", "t": "Scheduling"}, {"f": "What is Takt Time?", "b": "Takt Time = Available Production Time / Customer Demand Rate. The rate at which production must run to meet customer demand. If cycle time > takt time, you have a bottleneck.", "t": "Scheduling"}, {"f": "A line has 480 minutes of production time and customer demand is 240 units/day. What is takt time?", "b": "Takt Time = 480 / 240 = 2 minutes per unit.", "t": "Scheduling"}, {"f": "What is kanban?", "b": "A pull-based signaling system (cards, bins, or electronic signals) that authorizes production or replenishment only when downstream consumption has occurred. Controls WIP.", "t": "Scheduling"}, {"f": "What is the kanban formula for number of cards?", "b": "N = (D × LT × (1 + α)) / C. N = cards, D = demand rate, LT = lead time, α = safety factor, C = container size.", "t": "Scheduling"}, {"f": "What are common dispatching rules in scheduling?", "b": "FCFS (First Come First Served), SPT (Shortest Processing Time — minimizes average flow time), EDD (Earliest Due Date — minimizes max lateness), CR (Critical Ratio — prioritizes most urgent jobs).", "t": "Scheduling"}, {"f": "What is the Critical Ratio (CR) dispatching rule?", "b": "CR = (Due Date − Today) / Remaining Lead Time. CR < 1 = behind schedule (expedite). CR = 1 = on schedule. CR > 1 = ahead of schedule.", "t": "Scheduling"}, {"f": "What is Production Activity Control (PAC)?", "b": "The execution function of operations — scheduling, dispatching, and tracking work orders at the shop floor level. The 'do' phase after planning.", "t": "Scheduling"}, {"f": "What is a work order?", "b": "An authorization to produce a specific quantity of a specific item by a specific date. Triggers material picking, labor assignment, and capacity allocation.", "t": "Scheduling"}, {"f": "What is pull production?", "b": "A system where production or replenishment is triggered only by actual downstream demand. Minimizes WIP. Lean/JIT systems are pull-based. Contrast: push (produce to forecast).", "t": "Scheduling"}, {"f": "What is Total Cost of Ownership (TCO)?", "b": "The full cost of a purchase beyond unit price: includes acquisition, transportation, inspection, inventory carrying, defect/rework costs, supplier management, and end-of-life disposal.", "t": "ExternalSupply"}, {"f": "What is a sole-source supplier?", "b": "A single supplier that is the only available source for an item. Creates supply risk. Contrast: single-source (only one chosen, but alternatives exist).", "t": "ExternalSupply"}, {"f": "What are the four make/buy decision factors?", "b": "Cost comparison (make vs. buy fully loaded), Core competency (does making it build strategic advantage?), Capacity (do we have it?), Risk (supply security, IP protection, quality control).", "t": "ExternalSupply"}, {"f": "What is a fixed-price contract?", "b": "Supplier delivers for a set price regardless of actual costs. Transfers cost risk to supplier. Best when scope is clear and stable.", "t": "ExternalSupply"}, {"f": "What is a cost-plus contract?", "b": "Buyer pays supplier's actual costs plus a profit margin. Transfers cost risk to buyer. Used when scope is uncertain (R&D, ETO).", "t": "ExternalSupply"}, {"f": "What is early supplier involvement (ESI)?", "b": "Engaging key suppliers during product design to improve manufacturability, cost, and quality. Reduces changes and rework after design freeze.", "t": "ExternalSupply"}, {"f": "What is Distribution Requirements Planning (DRP)?", "b": "MRP logic applied to distribution networks. Plans replenishment quantities and timing from distribution centers (DCs) upstream to plants. DRP feeds the MPS.", "t": "Distribution"}, {"f": "What are the five modes of transportation and their tradeoffs?", "b": "Truck (road): flexible, medium cost/speed | Rail: low cost, slow, high volume | Air: fastest, most expensive | Water/Ocean: cheapest per unit, slowest | Pipeline: specialized (liquid/gas), low variable cost.", "t": "Distribution"}, {"f": "What is cross-docking?", "b": "Receiving goods at a DC and transferring them directly to outbound vehicles with minimal or no storage. Reduces handling and inventory carrying cost.", "t": "Distribution"}, {"f": "What is a 3PL?", "b": "Third-party logistics provider. An external company that performs logistics services (transportation, warehousing, fulfillment) on behalf of another company.", "t": "Distribution"}, {"f": "What is a 4PL?", "b": "Fourth-party logistics. A company that manages and integrates multiple 3PLs on behalf of a client. An orchestrator of the logistics network.", "t": "Distribution"}, {"f": "What is reverse logistics?", "b": "The process of moving goods from customers back up the supply chain — returns, recycling, refurbishment, disposal. A growing cost in eCommerce.", "t": "Distribution"}, {"f": "What is freight consolidation?", "b": "Combining multiple small shipments into a single larger shipment to reduce per-unit transportation cost.", "t": "Distribution"}, {"f": "What is a milk run?", "b": "A routing pattern where a truck makes multiple stops (at suppliers or customers) in a single route. Reduces transportation cost vs. point-to-point.", "t": "Distribution"}, {"f": "What is Statistical Process Control (SPC)?", "b": "Using statistical methods (control charts) to monitor a process and detect when it is going out of control — before defects occur. Based on natural vs. special cause variation.", "t": "Quality"}, {"f": "What is a control chart?", "b": "A time-series chart with a center line (mean), upper control limit (UCL), and lower control limit (LCL) at ±3σ. Points outside the limits = special cause variation = investigate.", "t": "Quality"}, {"f": "What is the difference between natural (common) and special cause variation?", "b": "Natural (common) cause: inherent to the process, always present, predictable. Special cause: abnormal events, assignable to a specific cause, requires investigation and correction.", "t": "Quality"}, {"f": "What is an X-bar/R chart used for?", "b": "Monitoring the mean (X-bar) and range (R) of a continuous variable for subgroups. Used for variables data when subgroup size is small (2–10).", "t": "Quality"}, {"f": "What is a p-chart used for?", "b": "Monitoring the proportion defective in a process. Used for attribute data (pass/fail) with variable subgroup size.", "t": "Quality"}, {"f": "What is DMAIC?", "b": "Define → Measure → Analyze → Improve → Control. The Six Sigma problem-solving methodology for improving an existing process. Each phase has required deliverables and tollgates.", "t": "Quality"}, {"f": "What is PDCA?", "b": "Plan → Do → Check → Act. Deming's continuous improvement cycle. Less rigorous than DMAIC but widely used for iterative improvement.", "t": "Quality"}, {"f": "What is Cost of Quality (COQ)?", "b": "All costs associated with quality, both good and bad: Prevention costs (training, design), Appraisal costs (inspection, testing), Internal failure costs (scrap, rework), External failure costs (warranty, returns). Prevention is cheapest.", "t": "Quality"}, {"f": "What is an ERP system?", "b": "Enterprise Resource Planning. Integrated software that manages core business processes: finance, HR, manufacturing, SC, purchasing. Single database for all functions. MRP is a component.", "t": "Technology"}, {"f": "What is a WMS?", "b": "Warehouse Management System. Software that manages and optimizes warehouse operations: receiving, putaway, picking, packing, shipping, inventory tracking.", "t": "Technology"}, {"f": "What is a TMS?", "b": "Transportation Management System. Software for planning, executing, and optimizing the movement of goods: carrier selection, routing, load planning, freight billing.", "t": "Technology"}, {"f": "What is an APS system?", "b": "Advanced Planning and Scheduling. Software that uses optimization algorithms to simultaneously plan supply and demand while considering constraints. More sophisticated than standard MRP.", "t": "Technology"}, {"f": "What is the Internet of Things (IoT) in supply chain?", "b": "Network of physical devices (sensors, RFID, GPS) that collect and transmit data automatically — enabling real-time visibility of assets, inventory, and shipments.", "t": "Technology"}, {"f": "What is a digital twin in supply chain?", "b": "A virtual replica of a physical supply chain network or process. Used to simulate, test, and optimize decisions without risk to actual operations.", "t": "Technology"}, {"f": "What is blockchain in supply chain?", "b": "A distributed, tamper-proof ledger that records transactions across a network. Use cases: provenance tracking, counterfeit prevention, smart contracts for payments.", "t": "Technology"}, {"f": "What is sustainability in supply chain?", "b": "Operating the supply chain in a way that meets current needs without compromising future generations. Includes: carbon footprint reduction, ethical sourcing, circular economy principles, waste minimization.", "t": "Strategy"}, {"f": "What is the triple bottom line?", "b": "A framework that measures supply chain performance on three dimensions: Profit (economic), People (social), Planet (environmental).", "t": "Strategy"}, {"f": "What is the SCOR model?", "b": "Supply Chain Operations Reference model. A framework that defines SC processes in 5 categories: Plan, Source, Make, Deliver, Return (and Enable). Used for benchmarking and improvement.", "t": "Strategy"}, {"f": "What is a value stream map (VSM)?", "b": "A Lean tool that visually maps all steps in a process (both value-adding and non-value-adding) to identify waste and design a future-state process.", "t": "Quality"}, {"f": "What are the 7 Wastes (DOWNTIME)?", "b": "Defects, Overproduction, Waiting, Non-utilized talent, Transportation, Inventory (excess), Motion, Extra-processing. All are non-value-adding activities that Lean targets for elimination.", "t": "Quality"}, {"f": "What is kaizen?", "b": "Japanese for 'continuous improvement.' In Lean: a structured event (kaizen blitz) or ongoing philosophy of small, incremental improvements made by the people doing the work.", "t": "Quality"}, {"f": "What is 5S?", "b": "Sort, Set in order, Shine, Standardize, Sustain. A Lean workplace organization method. Creates visual control and reduces waste from searching, motion, and errors.", "t": "Quality"}, {"f": "What is poka-yoke?", "b": "Mistake-proofing. A device or design that prevents errors from occurring or immediately detects them if they do. Example: USB connector that can only be inserted one way.", "t": "Quality"}, {"f": "What is Just-in-Time (JIT)?", "b": "A production philosophy that calls for producing and delivering exactly what is needed, exactly when it is needed, in exactly the quantity needed. Goal: zero inventory, zero defects.", "t": "Scheduling"}, {"f": "What is heijunka?", "b": "Lean production leveling. Smoothing the production schedule across a time period to avoid spikes and troughs. Enables stable flow and avoids overburdening (muri).", "t": "Scheduling"}, {"f": "What is jidoka?", "b": "Autonomation — the principle of stopping the process automatically when a defect is detected. Separates human work from machine work. Prevents defect propagation.", "t": "Quality"}, {"f": "What is single-minute exchange of die (SMED)?", "b": "A Lean technique to reduce setup/changeover time to under 10 minutes (single-digit minutes). Converts internal setup (machine stopped) to external setup (done while machine runs).", "t": "Scheduling"}, {"f": "What is Overall Equipment Effectiveness (OEE)?", "b": "OEE = Availability × Performance × Quality. A measure of how effectively a manufacturing operation is used. 85% is considered world-class for discrete manufacturing.", "t": "Quality"}, {"f": "What is a forecast bias?", "b": "A systematic tendency to over- or under-forecast. Bias = RSFE / n. Persistent positive bias = underpredicting. Persistent negative bias = overpredicting. Bias is worse than random error.", "t": "Demand"}, {"f": "What is the difference between a push and pull supply chain?", "b": "Push: produce/ship based on forecast, pushing inventory toward the customer. Pull: produce/replenish only in response to actual downstream demand. Most modern SCs use a mix.", "t": "Strategy"}, {"f": "What is safety lead time?", "b": "Adding extra lead time buffer to planned orders to protect against supply uncertainty. Alternative to safety stock — protects with time rather than inventory.", "t": "InternalSupply"}, {"f": "What is a bill of materials (BOM)?", "b": "A structured list of all components, subassemblies, and raw materials required to produce one unit of a finished product, with quantities and units of measure.", "t": "InternalSupply"}, {"f": "What is a multi-level BOM?", "b": "A BOM that shows parent-child relationships through multiple levels of assembly. Level 0 = finished product. Level 1 = direct subassemblies. Level 2+ = their components.", "t": "InternalSupply"}, {"f": "What is a phantom assembly in BOM?", "b": "A subassembly that is not physically stocked — it is built and immediately consumed in the parent assembly. Coded in BOM with a zero lead time and 100% scrap factor to 'blow through' it.", "t": "InternalSupply"}, {"f": "What is the difference between Cp and Cpk?", "b": "Cp measures process spread relative to spec limits (assumes process is centered). Cpk measures both spread AND centering — accounts for where the mean is relative to the spec limits. Use Cpk.", "t": "Quality"}, {"f": "What Cpk value is considered a capable process?", "b": "Cpk ≥ 1.33 (4-sigma). Cpk ≥ 1.00 is minimum acceptable. Cpk ≥ 1.67 = 5-sigma quality level.", "t": "Quality"}, {"f": "What is DPMO?", "b": "Defects Per Million Opportunities. DPMO = (Defects / (Units × Opportunities)) × 1,000,000. Six Sigma target: 3.4 DPMO.", "t": "Quality"}, {"f": "What is a fishbone (Ishikawa) diagram?", "b": "A cause-and-effect diagram used to brainstorm root causes of a problem. The 6M categories: Man, Machine, Method, Material, Measurement, Mother Nature (environment).", "t": "Quality"}, {"f": "What is the purpose of a Pareto chart?", "b": "Ranks causes or defects by frequency to identify the vital few that account for most of the problem (80/20 rule). A bar chart sorted by descending frequency.", "t": "Quality"}, {"f": "What is supplier certification?", "b": "A program where a supplier has been evaluated and approved to ship product directly to stock or production without incoming inspection — because their quality system is proven.", "t": "ExternalSupply"}, {"f": "What is vendor-managed inventory (VMI)?", "b": "A supply chain arrangement where the supplier monitors the buyer's inventory levels and triggers replenishment on their behalf. Reduces buyer's ordering burden; improves supplier forecasting.", "t": "ExternalSupply"}, {"f": "What is consignment inventory?", "b": "Inventory owned by the supplier but stored at the buyer's location. Buyer pays only when the inventory is consumed. Reduces buyer's cash tied up in stock.", "t": "ExternalSupply"}, {"f": "What is a service level?", "b": "The probability that demand during a replenishment cycle will be met from available stock (no stockout). 95% service level = 5% chance of stockout. Higher service level requires more safety stock.", "t": "Inventory"}, {"f": "What is order penetration point?", "b": "The point in the supply chain where a customer order 'enters' and drives the process. MTS = finished goods stage. MTO = raw material or WIP stage. Moves upstream as lead time tolerance decreases.", "t": "Strategy"}, {"f": "What is throughput in TOC?", "b": "The rate at which the system generates money through sales. In TOC: Throughput = Sales Revenue − Totally Variable Costs. Maximizing throughput at the constraint is the primary goal.", "t": "Scheduling"}, {"f": "What is inventory investment in TOC?", "b": "All money the system has invested in purchasing things the system intends to sell. Includes raw materials, WIP, finished goods. TOC seeks to minimize inventory investment.", "t": "Scheduling"}, {"f": "What is operating expense in TOC?", "b": "All money the system spends to turn inventory investment into throughput. Includes labor, overhead. TOC seeks to minimize operating expense.", "t": "Scheduling"}, {"f": "What is a supply chain network design decision?", "b": "Strategic-level decisions about where to locate facilities (plants, DCs, suppliers), what they will produce/store, and how to connect them. Drives long-term SC cost and service level.", "t": "Strategy"}, {"f": "What is decoupling inventory?", "b": "Inventory held between two consecutive operations to allow them to run independently. Protects downstream from upstream disruptions. Common in push-pull hybrid systems.", "t": "Inventory"}, {"f": "What is the difference between a DC and a cross-dock facility?", "b": "DC (Distribution Center): receives, stores, picks, and ships. Holds inventory. Cross-dock: receives and re-ships with minimal or no storage. No inventory holding.", "t": "Distribution"}, {"f": "What is a load profile?", "b": "A display of future capacity requirements based on the planned production schedule. Used in RCCP and CRP to identify capacity overloads and underloads.", "t": "InternalSupply"}, {"f": "What does 'time phasing' mean in MRP?", "b": "Organizing materials requirements by the time period when they are needed. MRP works backward from the due date using lead times to determine when to release orders.", "t": "InternalSupply"}, {"f": "What is an order release?", "b": "Formal authorization to procure material or begin production on a work order. Triggered when planned orders from MRP are converted to released orders.", "t": "InternalSupply"}, {"f": "What is expediting?", "b": "The practice of accelerating a specific order through the production or procurement process — typically because it is late or urgently needed. A sign of poor planning upstream.", "t": "Scheduling"}, {"f": "What is the objective of Sales & Operations Planning (S&OP)?", "b": "To align supply capacity and inventory to expected demand, balancing customer service levels against inventory investment and production efficiency — across a 3–18 month horizon.", "t": "SOP"}, {"f": "What is demand shaping?", "b": "Actively influencing customer demand through pricing, promotions, or product configuration to match available supply capacity or inventory. The demand side of S&OP.", "t": "Demand"}, {"f": "What is a product family in S&OP?", "b": "A grouping of related products that share common production resources, BOM structures, or customer segments. S&OP plans at the family level, not the individual SKU level.", "t": "SOP"}, {"f": "What is finite scheduling?", "b": "Scheduling that respects resource constraints — no work center can be scheduled beyond its available capacity. More accurate than infinite scheduling but harder to compute.", "t": "Scheduling"}, {"f": "What is infinite scheduling?", "b": "Scheduling without regard to resource constraints. Plans what needs to be done; capacity overloads are identified separately and resolved. Standard in most MRP systems.", "t": "Scheduling"}, {"f": "What is a bottleneck resource?", "b": "Any resource whose capacity is less than or equal to the demand placed on it. In TOC, the bottleneck determines the maximum throughput of the entire system.", "t": "Scheduling"}, {"f": "What is forward scheduling?", "b": "Scheduling from today forward to determine the earliest completion date given the start date. Gives the earliest possible completion time.", "t": "Scheduling"}, {"f": "What is backward scheduling?", "b": "Scheduling backward from the required due date to determine the latest possible start date. Most MRP systems use backward scheduling.", "t": "Scheduling"}, {"f": "What are fixed order costs?", "b": "Costs incurred every time an order is placed, regardless of quantity: purchase order processing, supplier setup, transportation, receiving inspection. One component of EOQ.", "t": "Inventory"}, {"f": "What happens to EOQ if ordering costs increase?", "b": "EOQ increases — it becomes economically optimal to order larger quantities less frequently when each order is expensive.", "t": "Inventory"}, {"f": "What happens to EOQ if holding costs increase?", "b": "EOQ decreases — it becomes optimal to order smaller quantities more frequently when carrying inventory is expensive.", "t": "Inventory"}, {"f": "What is intermodal transportation?", "b": "Using two or more modes of transportation (e.g., ship + rail + truck) in a single journey, with standardized containers that transfer between modes without unloading cargo.", "t": "Distribution"}, {"f": "What is a hub-and-spoke distribution network?", "b": "A design where all shipments flow through central hub locations before being sorted and sent to final destinations (spokes). Enables consolidation and reduces direct-lane costs.", "t": "Distribution"}, {"f": "What is postponement?", "b": "Delaying differentiation of a product as late as possible in the supply chain — keeping items in generic form and customizing only when customer order is received. Reduces inventory risk.", "t": "Strategy"}, {"f": "What is modular product design?", "b": "Designing products with interchangeable modules that can be configured in multiple ways from common components. Enables ATO (assemble-to-order) strategies. Reduces SKU proliferation.", "t": "Strategy"}, {"f": "What is supply chain visibility?", "b": "Real-time access to data about inventory levels, order status, and shipment location across the supply chain — enabling proactive response to disruptions.", "t": "Technology"}, {"f": "What is demand sensing?", "b": "Using short-term, high-frequency data (POS data, shipments, social signals) to update forecasts in near real-time. More accurate than traditional statistical forecasting for short horizons.", "t": "Demand"}, {"f": "What is the difference between strategic, tactical, and operational SC decisions?", "b": "Strategic (1–5+ years): network design, supplier relationships, tech investments. Tactical (3–18 months): S&OP, aggregate planning, capacity planning. Operational (days–weeks): scheduling, dispatching, expediting.", "t": "Strategy"}, {"f": "What is service parts management?", "b": "Planning and controlling inventory of spare parts and components needed for maintenance and repair. Typically demand is intermittent and hard to forecast.", "t": "Inventory"}, {"f": "What is intermittent demand?", "b": "Demand that occurs sporadically — many periods with zero demand punctuated by occasional large demands. Difficult to forecast. Croston's method is preferred over standard moving averages.", "t": "Demand"}, {"f": "What is a Gantt chart in scheduling?", "b": "A bar chart showing planned and actual start and finish times for each operation or job on each resource. Used for schedule visualization and tracking.", "t": "Scheduling"}, {"f": "What is total productive maintenance (TPM)?", "b": "A Lean philosophy that makes equipment maintenance the responsibility of all employees (especially operators). Goal: zero breakdowns, zero defects, zero accidents. Improves OEE.", "t": "Quality"}, {"f": "What is SMED's key insight?", "b": "Changeover time is the sum of internal and external setup. Internal setup can only be done with the machine stopped. External setup can be done while the machine runs. Convert internal to external.", "t": "Scheduling"}, {"f": "What is a control plan in Six Sigma?", "b": "A document that specifies what will be measured, how, at what frequency, by whom, and what action will be taken if the process goes out of control. The key output of the Control phase.", "t": "Quality"}, {"f": "What is standard work?", "b": "The current best known method for performing a task, documented and followed consistently. Enables training, variation reduction, and continuous improvement. Not a static document — updated as kaizen improves the process.", "t": "Quality"}, {"f": "What is visual management?", "b": "Making the status of a process visible at a glance — without having to ask. Includes: kanban boards, andon lights, color-coded inventory locations, production boards. A key Lean tool.", "t": "Quality"}, {"f": "What is an andon?", "b": "A visual or audible signal that indicates a problem or abnormal condition in production. Empowers operators to call for help or stop the line when a defect occurs (jidoka principle).", "t": "Quality"}, {"f": "What is hoshin kanri?", "b": "Japanese policy deployment. A strategic planning method that cascades top-level goals down through all levels of the organization into specific measurable actions. Ensures alignment.", "t": "Strategy"}, {"f": "What is the difference between efficiency and effectiveness in SC?", "b": "Efficiency: doing things right (cost minimization, resource utilization). Effectiveness: doing the right things (customer service, responsiveness). SC must balance both.", "t": "Strategy"}, {"f": "What is a supply chain trade-off?", "b": "A situation where improving one SC dimension (e.g., delivery speed) increases cost in another (e.g., transportation cost). All SC decisions involve trade-offs. The exam tests your ability to identify them.", "t": "Strategy"}], "domainLabels": {"Admin": "Admin", "Strategy": "Strategy", "SOP": "S&OP", "Demand": "Demand", "InternalSupply": "Internal Supply", "Inventory": "Inventory", "Scheduling": "Scheduling", "ExternalSupply": "External Supply", "Distribution": "Distribution", "Quality": "Quality", "Technology": "Technology"}, "glossary": [{"letter": "A", "term": "Aggregate Planning", "def": "Medium-term production/workforce plan (3–18 months).", "anchor": "At Neato this is your seasonal capacity plan: how many inbound units can you receive and process each month given headcount?"}, {"letter": "A", "term": "Available-to-Promise (ATP)", "def": "Uncommitted inventory available to promise to new orders.", "anchor": "At Neato: when a brand partner asks \"can you take X units in October,\" ATP is the answer your warehouse plan gives."}, {"letter": "A", "term": "ABC Classification", "def": "Rank inventory by value. A = 20% of SKUs, 80% of value (tight control, cycle count frequently). C = 50% of SKUs, 5% of value (light control). Every Neato SKU has an ABC profile.", "anchor": null}, {"letter": "B", "term": "Backorder", "def": "A customer order that cannot be filled immediately because the item is out of stock. A service failure that carries cost beyond the lost sale.", "anchor": null}, {"letter": "B", "term": "Bill of Materials (BOM)", "def": "Structured list of all components to make one unit.", "anchor": "At Neato this isn't a manufactured BOM — it's more like your prep-kit definition: what materials and steps are needed to receive/prep one ASIN."}, {"letter": "B", "term": "Bullwhip Effect", "def": "Demand amplification upstream. A small demand change at Neato → bigger swing in orders to suppliers. Caused by order batching, forecast error, and price speculation. Reduced by CPFR and demand visibility.", "anchor": null}, {"letter": "C", "term": "Capacity Requirements Planning (CRP)", "def": "Detailed verification that planned work orders can run with available labor/equipment.", "anchor": "At Neato: do you have enough receiving dock hours, prep labor, and staging space for next week's inbound plan?"}, {"letter": "C", "term": "Chase Strategy", "def": "Vary production to match demand. Neato analog: flex warehouse headcount seasonally (temp labor for Q4 peak).", "anchor": null}, {"letter": "C", "term": "Constraint", "def": "The single limiting resource in a system (TOC).", "anchor": "At Neato this might be receiving dock availability, a prep step, or truck scheduling. Improving non-constraints doesn't improve system throughput."}, {"letter": "C", "term": "Control Chart", "def": "Statistical chart with center line ± 3σ control limits. Points outside the limits = special cause variation.", "anchor": "At Neato: a p-chart on PO cancellation rate would tell you when the defect rate is out of statistical control."}, {"letter": "C", "term": "CPFR", "def": "Collaborative Planning, Forecasting & Replenishment. Sharing demand data with supply partners to reduce forecast error and bullwhip.", "anchor": null}, {"letter": "C", "term": "Cross-Docking", "def": "Receive and immediately re-ship with no storage. Applicable at Neato if you receive a shipment and immediately allocate it to outbound channel orders.", "anchor": null}, {"letter": "C", "term": "Cycle Stock", "def": "Normal inventory consumed and replenished in the order cycle. Average = Order Quantity / 2.", "anchor": null}, {"letter": "C", "term": "Cycle Time", "def": "Time to complete one unit through a process. Must be ≤ takt time at every step to avoid bottlenecks.", "anchor": null}, {"letter": "D", "term": "Decoupling Point", "def": "Where the supply chain switches from push (forecast-driven) to pull (order-driven).", "anchor": "At Neato: inventory is pushed in from brands based on forecast; outbound orders pull from that inventory."}, {"letter": "D", "term": "Demand Shaping", "def": "Using pricing, promotions, or bundling to shift demand to match available supply. eCommerce promotions are demand shaping.", "anchor": null}, {"letter": "D", "term": "DMAIC", "def": "Define → Measure → Analyze → Improve → Control. Six Sigma's project methodology. Every Neato improvement project is a DMAIC whether you call it that or not.", "anchor": null}, {"letter": "D", "term": "DPMO", "def": "Defects Per Million Opportunities. Six Sigma target: 3.4 DPMO.", "anchor": "At Neato: defects could be mis-shipped units, wrong ASINs, labeling errors — each with its own DPMO."}, {"letter": "D", "term": "DRP (Distribution Requirements Planning)", "def": "MRP logic for distribution. Plans when to replenish DCs based on downstream demand.", "anchor": "At Neato: if you had multiple DCs, DRP would plan replenishment between them."}, {"letter": "E", "term": "Economic Order Quantity (EOQ)", "def": "√(2DS/H). The order quantity that minimizes total ordering + holding cost.", "anchor": "At Neato: applies to any purchase order where you're trading off order frequency against holding cost."}, {"letter": "E", "term": "Efficiency", "def": "Actual output / Effective capacity. Are your processes running at their designed productivity?", "anchor": null}, {"letter": "E", "term": "ERP", "def": "Enterprise Resource Planning. Integrated platform managing all business functions from a single database. MRP is a module within ERP.", "anchor": null}, {"letter": "E", "term": "Exponential Smoothing", "def": "Forecasting method that weights recent data more heavily via alpha parameter. Higher alpha = more reactive. Best for stable demand with no strong trend.", "anchor": null}, {"letter": "F", "term": "Fill Rate", "def": "% of demand met immediately from stock.", "anchor": "At Neato: % of customer orders shipped complete from available inventory without substitution or backorder."}, {"letter": "F", "term": "Finite Scheduling", "def": "Scheduling that respects capacity constraints. Tells you when things can actually run.", "anchor": null}, {"letter": "F", "term": "Forecast Bias", "def": "Systematic over- or under-predicting. Bias = RSFE/n. Persistent bias is worse than random error because it causes chronic over- or under-stocking.", "anchor": null}, {"letter": "F", "term": "Frozen Zone", "def": "The short-term portion of the MPS inside the demand time fence where changes are highly restricted. Production has likely started or material has been committed.", "anchor": null}, {"letter": "H", "term": "Heijunka", "def": "Production leveling. Smooth out volume and mix variation over a planning horizon to enable stable, waste-free flow. Anti-pattern: batching all like products together.", "anchor": null}, {"letter": "H", "term": "Hedge Inventory", "def": "Extra stock built in anticipation of price increases or supply disruption. A deliberate business decision, not a safety stock calculation.", "anchor": null}, {"letter": "H", "term": "Hoshin Kanri", "def": "Policy deployment. Cascading strategic goals into operational actions.", "anchor": "At Neato: if the strategic goal is 99.5% ship accuracy, hoshin kanri translates that into measurable process targets at each operation."}, {"letter": "I", "term": "Infinite Scheduling", "def": "Scheduling without capacity constraints. Identifies what needs to happen without regard to whether it's feasible. CRP is then used to identify overloads.", "anchor": null}, {"letter": "I", "term": "Intermittent Demand", "def": "Sporadic demand — many zero periods, occasional spikes. Hard to forecast with standard methods. Service parts and slow-moving SKUs often show this pattern.", "anchor": null}, {"letter": "I", "term": "Inventory Turns", "def": "COGS / Average Inventory Value. Measures how fast inventory moves. Higher = better utilization of working capital.", "anchor": null}, {"letter": "I", "term": "IoT (Internet of Things)", "def": "Sensors, RFID, GPS devices that provide real-time visibility of assets and inventory. Foundation for supply chain visibility platforms.", "anchor": null}, {"letter": "J", "term": "Jidoka", "def": "Autonomation — stop on defect. A machine (or person) stops the process when an abnormality is detected. Prevents propagation of defects downstream.", "anchor": null}, {"letter": "J", "term": "JIT (Just-in-Time)", "def": "Produce exactly what is needed, when needed, in the quantity needed. Zero inventory is the ideal. Kanban is the operating mechanism.", "anchor": null}, {"letter": "K", "term": "Kanban", "def": "Pull signal that authorizes production or replenishment. Can be a card, bin, electronic signal. Controls WIP and prevents overproduction.", "anchor": null}, {"letter": "K", "term": "Kaizen", "def": "Continuous improvement. Small, incremental improvements made continuously. A kaizen event (blitz) is a focused improvement workshop over 2–5 days.", "anchor": null}, {"letter": "L", "term": "Lead Time", "def": "Total time from order placement to receipt. Composed of: setup, run, queue, wait, move. Queue time is usually the largest component.", "anchor": null}, {"letter": "L", "term": "Level Production Strategy", "def": "Constant production rate, absorb demand variation through inventory. Low workforce disruption, higher inventory cost.", "anchor": null}, {"letter": "L", "term": "Low-Level Code", "def": "The lowest level at which a component appears in any BOM. Used by MRP to process each component once.", "anchor": null}, {"letter": "M", "term": "MAD (Mean Absolute Deviation)", "def": "Average of absolute forecast errors. Lower = better forecast accuracy.", "anchor": null}, {"letter": "M", "term": "MAPE", "def": "Mean Absolute Percentage Error. Forecast accuracy expressed as %. Useful for comparing across products.", "anchor": null}, {"letter": "M", "term": "Master Production Schedule (MPS)", "def": "Time-phased plan of what finished items to produce and when. Drives MRP. The bridge between demand and production.", "anchor": null}, {"letter": "M", "term": "Material Requirements Planning (MRP)", "def": "Calculates what components are needed, in what quantity, and when — based on MPS, BOM, and inventory records.", "anchor": null}, {"letter": "M", "term": "Milk Run", "def": "Routing where a vehicle makes multiple stops. Reduces cost vs. direct trips.", "anchor": null}, {"letter": "M", "term": "Muda", "def": "Japanese for waste. Any activity that consumes resources without adding value. The 7 Wastes (DOWNTIME).", "anchor": null}, {"letter": "M", "term": "Mura", "def": "Unevenness or inconsistency in production flow. Addressed by heijunka.", "anchor": null}, {"letter": "M", "term": "Muri", "def": "Overburden of people or equipment. Leads to breakdowns and defects.", "anchor": null}, {"letter": "N", "term": "Net Requirements", "def": "Gross Requirements − Scheduled Receipts − On-Hand Inventory. The quantity MRP needs to plan a new order for.", "anchor": null}, {"letter": "O", "term": "OEE (Overall Equipment Effectiveness)", "def": "Availability × Performance × Quality. World-class target ≥ 85%.", "anchor": null}, {"letter": "O", "term": "Order Penetration Point", "def": "Where customer demand enters the process. Determines decoupling point and how much is push vs. pull.", "anchor": null}, {"letter": "P", "term": "PAC (Production Activity Control)", "def": "Execution of the production plan at the shop floor. Scheduling, dispatching, tracking.", "anchor": null}, {"letter": "P", "term": "Pareto Analysis", "def": "Rank causes by frequency to find the vital few. 80/20 rule. The starting point of any defect investigation.", "anchor": null}, {"letter": "P", "term": "Phantom Assembly", "def": "BOM subassembly that is built and immediately consumed — never stocked. MRP 'blows through' it.", "anchor": null}, {"letter": "P", "term": "Pipeline Inventory", "def": "Inventory in transit. Increases with longer lead times.", "anchor": null}, {"letter": "P", "term": "Poka-Yoke", "def": "Mistake-proofing. Device or design that prevents errors.", "anchor": "At Neato: HZ-location constraint in warehouse capacity planning — physical layout prevents overcapacity."}, {"letter": "P", "term": "Postponement", "def": "Delay product differentiation as late as possible to reduce inventory risk.", "anchor": null}, {"letter": "P", "term": "Pull System", "def": "Produce/replenish only in response to actual downstream demand. Kanban is the operating mechanism.", "anchor": null}, {"letter": "P", "term": "Push System", "def": "Produce/ship based on forecast. Pushes inventory toward the customer.", "anchor": null}, {"letter": "R", "term": "Reorder Point (ROP)", "def": "The inventory level that triggers a replenishment order. ROP = d̄ × LT + SS.", "anchor": null}, {"letter": "R", "term": "Reverse Logistics", "def": "Movement of goods from customer back upstream — returns, recycling, disposal. Growing cost in eCommerce.", "anchor": null}, {"letter": "R", "term": "RSFE", "def": "Running Sum of Forecast Errors. Used in tracking signal calculation. Positive RSFE = consistently underpredicting.", "anchor": null}, {"letter": "S", "term": "Safety Stock", "def": "Buffer inventory against demand variability and supply uncertainty. Statistical: SS = Z × σ_LT.", "anchor": null}, {"letter": "S", "term": "SCOR Model", "def": "Supply Chain Operations Reference. Framework: Plan, Source, Make, Deliver, Return, Enable. Used for benchmarking and process improvement.", "anchor": null}, {"letter": "S", "term": "Service Level", "def": "Probability of meeting demand from stock during a replenishment cycle. Higher service level = more safety stock needed.", "anchor": null}, {"letter": "S", "term": "SMED", "def": "Single-Minute Exchange of Die. Reduce changeover to <10 minutes. Enables smaller lot sizes and more flexible production.", "anchor": null}, {"letter": "S", "term": "S&OP", "def": "Sales & Operations Planning. Monthly cross-functional process to balance demand and supply at aggregate level. 5 steps: data gathering → demand plan → supply plan → reconciliation → executive review.", "anchor": null}, {"letter": "S", "term": "Standard Work", "def": "The documented current best method. Enables training, stability, and a baseline for kaizen.", "anchor": null}, {"letter": "S", "term": "Supply Chain Risk", "def": "Disruption potential across the chain: supply, demand, operational, financial, geopolitical.", "anchor": null}, {"letter": "T", "term": "Takt Time", "def": "Available time / Demand rate. The heartbeat of production. Cycle time must be ≤ takt time at every step.", "anchor": null}, {"letter": "T", "term": "TCO (Total Cost of Ownership)", "def": "Full cost beyond unit price: freight, handling, storage, inspection, rework, returns.", "anchor": null}, {"letter": "T", "term": "Theory of Constraints (TOC)", "def": "Goldratt's framework: identify the constraint, exploit it, subordinate everything else, elevate it, repeat.", "anchor": null}, {"letter": "T", "term": "Throughput", "def": "Rate at which the system generates money through sales. TOC's primary performance measure.", "anchor": null}, {"letter": "T", "term": "Tracking Signal", "def": "RSFE / MAD. Detects forecast bias. Range: −4 to +4 acceptable.", "anchor": null}, {"letter": "V", "term": "Value Stream Map (VSM)", "def": "Visual map of all process steps (value-adding and non-value-adding) with data on flow time, WIP, and information flows. Used to design lean future state.", "anchor": null}, {"letter": "V", "term": "VMI (Vendor-Managed Inventory)", "def": "Supplier monitors buyer's inventory and triggers replenishment. Reduces buyer's ordering burden.", "anchor": null}, {"letter": "V", "term": "Visual Management", "def": "Making process status visible at a glance. Kanban boards, control charts on the wall, color-coded storage.", "anchor": null}, {"letter": "W", "term": "WIP (Work In Process)", "def": "Inventory that has been started but not yet completed. Little's Law: WIP = Throughput × Lead Time. Reducing WIP reduces lead time.", "anchor": null}, {"letter": "W", "term": "WMS (Warehouse Management System)", "def": "Software managing warehouse operations: receiving, putaway, picking, packing, shipping.", "anchor": null}], "formulas": [{"domain": "Inventory Management (Domain VI — 14% of exam)", "items": [{"title": "Economic Order Quantity (EOQ)", "formula": "EOQ = √(2DS / H)\n\nD = Annual demand (units/year)\nS = Order/setup cost per order ($)\nH = Annual holding/carrying cost per unit ($/unit/year)", "notes": ["What it gives you: The order quantity that minimizes total inventory cost.", "Neato anchor: Applies to any replenishment decision where you're trading off ordering frequency against carrying cost — think inbound purchase orders."]}, {"title": "Reorder Point (ROP)", "formula": "ROP = (Average demand per day × Lead time in days) + Safety Stock\nROP = d̄ × LT + SS", "notes": []}, {"title": "Safety Stock — Statistical Method", "formula": "SS = Z × σ_LT\n\nZ = Service level z-score (e.g., 95% service level → Z = 1.65)\nσ_LT = Standard deviation of demand during lead time\n\nσ_LT = √(LT × σ_d² + d̄² × σ_LT²)", "notes": ["If lead time is variable:"]}, {"title": "Safety Stock — Simple Method", "formula": "SS = (Max daily demand − Average daily demand) × Lead time", "notes": []}, {"title": "Inventory Turnover", "formula": "Inventory Turns = COGS / Average Inventory Value", "notes": []}, {"title": "Days of Supply (DOS)", "formula": "Days of Supply = (On-Hand Inventory / Average Daily Demand)\n\nDOS = 365 / Inventory Turns", "notes": []}, {"title": "Average Inventory", "formula": "Average Inventory = (Order Quantity / 2) + Safety Stock", "notes": []}, {"title": "Total Inventory Cost", "formula": "TIC = (D/Q × S) + (Q/2 × H)\nPurchase cost is added separately if needed.", "notes": []}]}, {"domain": "MRP / Master Scheduling (Domain IV — 12% of exam)", "items": [{"title": "MRP Net Requirements", "formula": "Net Requirements = Gross Requirements − Scheduled Receipts − Projected On-Hand\n(If negative, Net Requirements = 0 — no order needed)", "notes": []}, {"title": "Available-to-Promise (ATP)", "formula": "ATP (first period) = Beginning inventory + MPS quantity − sum of customer orders until next MPS\nATP (subsequent periods) = MPS quantity − sum of customer orders until next MPS", "notes": []}, {"title": "Planned Order Release", "formula": "Planned Order Release = Planned Order Receipt shifted back by lead time", "notes": []}]}, {"domain": "Forecasting & Demand (Domain III — 12% of exam)", "items": [{"title": "Simple Moving Average (SMA)", "formula": "SMA = (A₁ + A₂ + ... + Aₙ) / n\nA = Actual demand, n = number of periods", "notes": []}, {"title": "Weighted Moving Average (WMA)", "formula": "WMA = Σ(weight × actual demand) / Σweights", "notes": []}, {"title": "Exponential Smoothing", "formula": "Fₜ = α × Aₜ₋₁ + (1 − α) × Fₜ₋₁\n\nα (alpha) = smoothing constant (0 < α < 1)\nHigher α = more weight on recent data (more reactive)\nLower α = more weight on older data (more stable)", "notes": []}, {"title": "Mean Absolute Deviation (MAD)", "formula": "MAD = Σ|Actual − Forecast| / n", "notes": ["Lower MAD = better forecast accuracy."]}, {"title": "Mean Absolute Percentage Error (MAPE)", "formula": "MAPE = (Σ(|Actual − Forecast| / Actual) / n) × 100%", "notes": ["Useful for comparing forecast accuracy across products of different scale."]}, {"title": "Tracking Signal", "formula": "Tracking Signal = RSFE / MAD\n\nRSFE = Running Sum of Forecast Errors = Σ(Actual − Forecast)", "notes": ["Acceptable range: −4 to +4. Outside that range → review your forecast model."]}, {"title": "Bias", "formula": "Bias = RSFE / n", "notes": []}]}, {"domain": "Capacity (Domain IV / Domain II)", "items": [{"title": "Capacity Utilization", "formula": "Utilization = (Actual Output / Design Capacity) × 100%", "notes": []}, {"title": "Efficiency", "formula": "Efficiency = (Actual Output / Effective Capacity) × 100%", "notes": []}, {"title": "Available Capacity", "formula": "Available Capacity = Utilization × Efficiency × Design Capacity", "notes": []}]}, {"domain": "Lean / Scheduling (Domain VII — 12% of exam)", "items": [{"title": "Takt Time", "formula": "Takt Time = Available Production Time / Customer Demand Rate\n            (seconds or minutes per unit)", "notes": ["What it gives you: The pace at which production must run to meet demand. If your cycle time > takt time, you have a bottleneck.", "Neato anchor: Applies to warehouse throughput — if you need to receive 200 units in a 4-hour window, takt time = 72 seconds/unit."]}, {"title": "Kanban Quantity (Number of Cards)", "formula": "N = (D × LT × (1 + α)) / C\n\nN = number of kanban cards\nD = demand rate (units per time period)\nLT = lead time (same time unit as D)\nα = safety factor (0–1, typically 0.1–0.2)\nC = container size (units per container)", "notes": []}, {"title": "Line Efficiency (OEE proxy)", "formula": "OEE = Availability × Performance × Quality", "notes": []}]}, {"domain": "Distribution (Domain VIII — 8% of exam)", "items": [{"title": "DRP Net Requirements (same logic as MRP)", "formula": "Net Requirements = Gross Requirements − Projected On-Hand − Scheduled Receipts", "notes": []}]}, {"domain": "Quality (Domain IX — 9% of exam)", "items": [{"title": "Process Capability Index (Cpk)", "formula": "Cpk = min[(USL − μ) / 3σ, (μ − LSL) / 3σ]\n\nUSL = Upper Spec Limit\nLSL = Lower Spec Limit\nμ = Process mean\nσ = Process standard deviation", "notes": ["Cpk ≥ 1.33 = capable process (4-sigma). Cpk ≥ 1.67 = 5-sigma."]}, {"title": "Defects Per Million Opportunities (DPMO)", "formula": "DPMO = (Defects / (Units × Opportunities per unit)) × 1,000,000", "notes": []}]}, {"domain": "Key Ratios to Memorize", "items": [{"title": "Inventory Turns", "formula": "COGS / Avg Inventory", "notes": ["How fast inventory moves"]}, {"title": "Days of Supply", "formula": "365 / Turns", "notes": ["How many days of stock on hand"]}, {"title": "Fill Rate", "formula": "Units Shipped / Units Ordered", "notes": ["Customer service level"]}, {"title": "Order Cycle Time", "formula": "Ship date − Order date", "notes": ["Speed"]}, {"title": "Perfect Order Rate", "formula": "Orders with no errors / Total orders", "notes": ["Overall SC quality"]}]}], "resources": [{"category": "Practice Questions", "items": [{"name": "Open Exam Prep", "desc": "200 practice Qs, full study guide, AI explanations, flashcards", "url": "https://open-exam-prep.com/study-guides/cpim"}, {"name": "CPIM Exam .com", "desc": "Free 20-question sample exam with answers, domain quizzes", "url": "https://cpimexam.com/blog/"}, {"name": "Process Exam", "desc": "10 full scenario-based practice questions with answers", "url": "https://www.processexam.com/apics/apics-cpim-part-2-certification-exam-sample-questions"}, {"name": "TestPrepReview", "desc": "Domain-mapped practice questions, free access", "url": "https://www.testprepreview.com/cpim-practice-test.htm"}, {"name": "p2pexams", "desc": "Free CPIM PDF question banks (community-uploaded)", "url": "https://www.p2pexams.com/apics/pdf/cpim"}]}, {"category": "Flashcards", "items": [{"name": "Quizlet — CPIM General", "desc": "Community flashcard set", "url": "https://quizlet.com/512653177/cpim-flash-cards/"}, {"name": "Quizlet — Part 1 Practice", "desc": "Exam-style practice questions", "url": "https://quizlet.com/597756730/cpim-part-1-exam-practice-flash-cards/"}, {"name": "Quizlet — Part 1 Terms", "desc": "APICS CPIM terminology, 15th edition", "url": "https://quizlet.com/216307993/apics-cpim-part-1-terms-15th-edition-flash-cards/"}, {"name": "Quizlet — Part 2", "desc": "Part 2 / advanced content", "url": "https://quizlet.com/473192007/cpim-part-2-exam-flash-cards/"}, {"name": "Quizlet — Pretest", "desc": "CPIM pretest format practice", "url": "https://quizlet.com/811280284/cpim-pretest-flash-cards/"}, {"name": "Quizlet — Practice Questions", "desc": "Mixed scenario questions", "url": "https://quizlet.com/709951218/cpim-practice-questions-flash-cards/"}, {"name": "APICS CPIM Flashcards App", "desc": "iOS app, free tier", "url": "https://apps.apple.com/us/app/id6748017282"}, {"name": "APICS CPIM Exam Prep 2026", "desc": "iOS app, free tier", "url": "https://apps.apple.com/app/id6738938790"}]}, {"category": "Video", "items": [{"name": "CPIM Study Guide Playlist", "desc": "Tutorial explainer videos for all exam content", "url": "https://www.youtube.com/playlist?list=PLYVaEGkqcrfN1pGdOsdSvFInoyPDOlqaL"}]}, {"category": "Study Guides", "items": [{"name": "Open Exam Prep — 2026 Guide", "desc": "Most detailed free exam guide available", "url": "https://open-exam-prep.com/blog/apics-cpim-certified-in-production-and-inventory-management-exam-guide-2026"}, {"name": "CPIM Exam .com Blog", "desc": "20+ articles: domain guides, tips, pass strategies", "url": "https://cpimexam.com/blog/"}, {"name": "Supply Chain Math", "desc": "Domain breakdowns, formulas, study tips", "url": "https://supplychainmath.com/en/supply-chain-certifications.html"}, {"name": "Pocket Prep", "desc": "Mobile question drilling, free tier", "url": "https://www.pocketprep.com/exams/apics-cpim/"}, {"name": "ASCM CPIM Free Preview", "desc": "30-day preview of Module 1, Section A", "url": "https://www.ascm.org/lp/cpim-free-preview/"}]}, {"category": "Community", "items": [{"name": "r/APICS", "desc": "Pass stories, study tips, free resource threads — search \"CPIM passed\" or \"CPIM study\"", "url": "https://www.reddit.com/r/APICS/"}, {"name": "r/supplychain", "desc": "Career context, how CPIM is valued, complementary skills", "url": "https://www.reddit.com/r/supplychain/"}, {"name": "r/certifications", "desc": "General cert strategy and motivation", "url": "https://www.reddit.com/r/certifications/"}]}], "zones": [{"id": 1, "name": "Strategy HQ", "domain": "Strategy", "weight": 12, "icon": "🏛️"}, {"id": 2, "name": "The War Room (S&OP)", "domain": "S&OP", "weight": 10, "icon": "🪖"}, {"id": 3, "name": "The Demand Oracle", "domain": "Demand Planning", "weight": 12, "icon": "🔮"}, {"id": 4, "name": "The Production Engine", "domain": "MRP/MPS", "weight": 12, "icon": "⚙️"}, {"id": 5, "name": "The Procurement Battlefield", "domain": "External Supply", "weight": 11, "icon": "🤝"}, {"id": 6, "name": "The Inventory Vault", "domain": "Inventory Mgmt", "weight": 14, "icon": "🏦"}, {"id": 7, "name": "The Factory Floor", "domain": "Scheduling", "weight": 12, "icon": "🏭"}, {"id": 8, "name": "The Distribution Network", "domain": "Distribution", "weight": 8, "icon": "🚛"}, {"id": 9, "name": "The Quality Citadel", "domain": "Quality & Tech", "weight": 9, "icon": "🏆"}], "ranks": [{"xp": 0, "name": "Recruit", "icon": "🪖"}, {"xp": 500, "name": "Analyst", "icon": "📋"}, {"xp": 1500, "name": "Planner", "icon": "📦"}, {"xp": 3000, "name": "Scheduler", "icon": "🔧"}, {"xp": 5000, "name": "Operations Manager", "icon": "📊"}, {"xp": 8000, "name": "Director of Supply Chain", "icon": "🏭"}, {"xp": 12000, "name": "VP of Operations", "icon": "🎯"}, {"xp": 17000, "name": "CPIM Candidate", "icon": "📜"}, {"xp": 25000, "name": "Certified", "icon": "✅"}]}
+</script>
+
+<script>
+(function(){
+  "use strict";
+  const DATA = JSON.parse(document.getElementById("app-data").textContent);
+  const CARDS = DATA.cards;
+  const DOMAIN_LABELS = DATA.domainLabels;
+  const GLOSSARY = DATA.glossary;
+  const FORMULAS = DATA.formulas;
+  const RESOURCES = DATA.resources;
+  const ZONES = DATA.zones;
+  const RANKS = DATA.ranks;
+
+  /* ---------------- State / localStorage ---------------- */
+  const STORAGE_KEY = "cpimGauntletState";
+
+  function defaultState(){
+    const zoneState = {};
+    ZONES.forEach((z,i)=>{ zoneState[z.id] = i===0 ? "current" : "locked"; });
+    return { xp:0, streak:0, zones:zoneState };
+  }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      return Object.assign(defaultState(), parsed, { zones: Object.assign(defaultState().zones, parsed.zones||{}) });
+    }catch(e){
+      return defaultState();
+    }
+  }
+
+  let state = loadState();
+
+  function saveState(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function rankForXp(xp){
+    let current = RANKS[0];
+    for(const r of RANKS){
+      if(xp >= r.xp) current = r;
+    }
+    return current;
+  }
+
+  function nextRankForXp(xp){
+    for(const r of RANKS){
+      if(r.xp > xp) return r;
+    }
+    return null;
+  }
+
+  /* ---------------- Navigation ---------------- */
+  const TAB_TITLES = {
+    dashboard:["🏠 Dashboard",""],
+    flashcards:["🃏 Flashcards",""],
+    formulas:["📐 Formulas",""],
+    glossary:["📖 Glossary",""],
+    resources:["🔗 Resources",""]
+  };
+
+  function showView(name){
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    document.getElementById("view-"+name).classList.add("active");
+    document.querySelectorAll(".nav-btn").forEach(b=>{
+      b.classList.toggle("active", b.dataset.view===name);
+    });
+    document.getElementById("az-rail").style.display = name==="glossary" ? "flex" : "none";
+    const t = TAB_TITLES[name];
+    document.getElementById("topbar-title").textContent = t[0];
+    document.getElementById("topbar-sub").textContent = t[1];
+    window.scrollTo(0,0);
+  }
+
+  document.querySelectorAll(".nav-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>showView(btn.dataset.view));
+  });
+
+  /* ---------------- Dashboard ---------------- */
+  function renderDashboard(){
+    const rank = rankForXp(state.xp);
+    const nextRank = nextRankForXp(state.xp);
+    document.getElementById("dash-rank").textContent = rank.icon + " " + rank.name;
+    const label = document.getElementById("dash-xp-label");
+    const fill = document.getElementById("dash-xp-fill");
+    if(nextRank){
+      const span = nextRank.xp - rank.xp;
+      const progressed = state.xp - rank.xp;
+      const pct = Math.max(0, Math.min(100, (progressed/span)*100));
+      fill.style.width = pct + "%";
+      label.textContent = state.xp.toLocaleString() + " / " + nextRank.xp.toLocaleString() + " XP to " + nextRank.name;
+    }else{
+      fill.style.width = "100%";
+      label.textContent = state.xp.toLocaleString() + " XP — MAX RANK";
+    }
+
+    const clearedCount = Object.values(state.zones).filter(s=>s==="cleared").length;
+    document.getElementById("zone-progress-fill").style.width = (clearedCount/ZONES.length*100) + "%";
+    document.getElementById("zone-progress-label").textContent = clearedCount + " / " + ZONES.length + " zones cleared";
+
+    document.getElementById("streak-count").textContent = state.streak;
+
+    const grid = document.getElementById("zone-grid");
+    grid.innerHTML = "";
+    ZONES.forEach(z=>{
+      const st = state.zones[z.id];
+      const div = document.createElement("div");
+      div.className = "zone-card " + st;
+      div.innerHTML =
+        '<div class="zone-badge">'+(st==="cleared"?"✅":st==="current"?"▶️":"🔒")+'</div>'+
+        '<div class="zone-icon">'+z.icon+'</div>'+
+        '<div class="zone-name">'+z.name+'</div>'+
+        '<div class="zone-weight">'+z.domain+' · '+z.weight+'%</div>';
+      div.addEventListener("click", ()=>cycleZone(z.id));
+      grid.appendChild(div);
+    });
+
+    const ladder = document.getElementById("rank-ladder");
+    ladder.innerHTML = "";
+    RANKS.forEach(r=>{
+      const row = document.createElement("div");
+      row.className = "rank-row" + (state.xp>=r.xp ? " achieved" : "");
+      row.innerHTML =
+        '<div class="rank-icon">'+r.icon+'</div>'+
+        '<div class="rank-name">'+r.name+'</div>'+
+        '<div class="rank-xp">'+r.xp.toLocaleString()+' XP</div>';
+      ladder.appendChild(row);
+    });
+  }
+
+  function cycleZone(id){
+    const order = ["locked","current","cleared"];
+    const cur = state.zones[id];
+    const idx = order.indexOf(cur);
+    state.zones[id] = order[(idx+1)%order.length];
+    saveState();
+    renderDashboard();
+  }
+
+  document.getElementById("xp-plus").addEventListener("click", ()=>{
+    state.xp += 50; saveState(); renderDashboard();
+  });
+  document.getElementById("xp-minus").addEventListener("click", ()=>{
+    state.xp = Math.max(0, state.xp-50); saveState(); renderDashboard();
+  });
+  document.getElementById("streak-plus").addEventListener("click", ()=>{
+    state.streak += 1; saveState(); renderDashboard();
+  });
+  document.getElementById("streak-minus").addEventListener("click", ()=>{
+    state.streak = Math.max(0, state.streak-1); saveState(); renderDashboard();
+  });
+
+  /* ---------------- Flashcards ---------------- */
+  let deck = [];
+  let deckIdx = 0;
+  let flipped = false;
+  let sessionScore = { got:0, missed:0, seen:{} };
+  let currentFilter = "all";
+
+  function buildFilterOptions(){
+    const sel = document.getElementById("flash-filter");
+    const domains = Array.from(new Set(CARDS.map(c=>c.t)));
+    sel.innerHTML = '<option value="all">All Domains ('+CARDS.length+')</option>';
+    domains.forEach(d=>{
+      const count = CARDS.filter(c=>c.t===d).length;
+      const label = DOMAIN_LABELS[d] || d;
+      const opt = document.createElement("option");
+      opt.value = d;
+      opt.textContent = label + " (" + count + ")";
+      sel.appendChild(opt);
+    });
+    sel.addEventListener("change", ()=>{
+      currentFilter = sel.value;
+      buildDeck();
+    });
+  }
+
+  function buildDeck(){
+    deck = currentFilter==="all" ? CARDS.slice() : CARDS.filter(c=>c.t===currentFilter);
+    deckIdx = 0;
+    flipped = false;
+    sessionScore = { got:0, missed:0, seen:{} };
+    document.getElementById("flash-deck-wrap").style.display = "block";
+    document.getElementById("flash-score-wrap").style.display = "none";
+    renderCard();
+  }
+
+  function shuffleDeck(){
+    for(let i=deck.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [deck[i],deck[j]] = [deck[j],deck[i]];
+    }
+    deckIdx = 0;
+    flipped = false;
+    renderCard();
+  }
+
+  function renderCard(){
+    if(deck.length===0){
+      document.getElementById("flash-counter").textContent = "0/0";
+      document.getElementById("flash-front-text").textContent = "No cards in this filter.";
+      return;
+    }
+    const card = deck[deckIdx];
+    const label = DOMAIN_LABELS[card.t] || card.t;
+    document.getElementById("flash-tag-front").textContent = label;
+    document.getElementById("flash-tag-back").textContent = label;
+    document.getElementById("flash-front-text").textContent = card.f;
+    document.getElementById("flash-back-text").textContent = card.b;
+    document.getElementById("flash-counter").textContent = (deckIdx+1)+"/"+deck.length;
+    document.getElementById("flash-progress-fill").style.width = ((deckIdx+1)/deck.length*100)+"%";
+    const flipCard = document.getElementById("flip-card");
+    flipped = false;
+    flipCard.classList.remove("flipped");
+  }
+
+  function flipCardToggle(){
+    flipped = !flipped;
+    document.getElementById("flip-card").classList.toggle("flipped", flipped);
+  }
+
+  function goToIndex(i){
+    if(deck.length===0) return;
+    deckIdx = ((i % deck.length) + deck.length) % deck.length;
+    renderCard();
+  }
+
+  function markCard(gotIt){
+    if(deck.length===0) return;
+    const card = deck[deckIdx];
+    const key = card.f;
+    if(!(key in sessionScore.seen)){
+      sessionScore.seen[key] = true;
+      if(gotIt) sessionScore.got++; else sessionScore.missed++;
+    }
+    if(deckIdx === deck.length-1){
+      showScore();
+    }else{
+      goToIndex(deckIdx+1);
+    }
+  }
+
+  function showScore(){
+    const total = sessionScore.got + sessionScore.missed;
+    const pct = total ? Math.round(sessionScore.got/total*100) : 0;
+    document.getElementById("flash-deck-wrap").style.display = "none";
+    const wrap = document.getElementById("flash-score-wrap");
+    wrap.style.display = "block";
+    wrap.innerHTML =
+      '<div class="card flash-score">'+
+      '<div class="big">'+pct+'%</div>'+
+      '<div class="xp-label">'+sessionScore.got+' correct / '+sessionScore.missed+' missed</div>'+
+      '<button id="flash-restart" style="margin-top:16px;">Study Again</button>'+
+      '</div>';
+    document.getElementById("flash-restart").addEventListener("click", buildDeck);
+  }
+
+  document.getElementById("flip-card").addEventListener("click", flipCardToggle);
+  document.getElementById("flash-prev").addEventListener("click", ()=>goToIndex(deckIdx-1));
+  document.getElementById("flash-next").addEventListener("click", ()=>goToIndex(deckIdx+1));
+  document.getElementById("flash-got").addEventListener("click", ()=>markCard(true));
+  document.getElementById("flash-missed").addEventListener("click", ()=>markCard(false));
+  document.getElementById("flash-shuffle").addEventListener("click", shuffleDeck);
+
+  // swipe gestures
+  (function(){
+    let startX=0, startY=0, tracking=false;
+    const scene = document.getElementById("flip-scene");
+    scene.addEventListener("touchstart", e=>{
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      tracking = true;
+    }, {passive:true});
+    scene.addEventListener("touchend", e=>{
+      if(!tracking) return;
+      tracking = false;
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      if(Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)*1.5){
+        if(dx < 0) goToIndex(deckIdx+1); else goToIndex(deckIdx-1);
+      }
+    }, {passive:true});
+  })();
+
+  /* ---------------- Formulas ---------------- */
+  function renderFormulas(filterText){
+    const q = (filterText||"").trim().toLowerCase();
+    const list = document.getElementById("formula-list");
+    list.innerHTML = "";
+    let anyShown = false;
+
+    FORMULAS.forEach(domain=>{
+      const items = domain.items.filter(item=>{
+        if(!q) return true;
+        return (item.title+" "+item.formula+" "+item.notes.join(" ")).toLowerCase().includes(q);
+      });
+      if(items.length===0) return;
+      anyShown = true;
+      const h = document.createElement("div");
+      h.className = "formula-domain-title";
+      h.textContent = domain.domain;
+      list.appendChild(h);
+
+      items.forEach(item=>{
+        const card = document.createElement("div");
+        card.className = "formula-card";
+        card.innerHTML =
+          '<div class="formula-title">'+item.title+'</div>'+
+          '<div class="formula-block">'+escapeHtml(item.formula)+'</div>'+
+          (item.notes.length ? '<div class="formula-notes">'+item.notes.map(n=>'<div class="formula-note">'+escapeHtml(n)+'</div>').join("")+'</div>' : '')+
+          '<div class="copy-hint">tap to copy</div>';
+        card.addEventListener("click", ()=>{
+          const text = item.title+"\n"+item.formula;
+          copyToClipboard(text);
+          card.classList.add("copied");
+          setTimeout(()=>card.classList.remove("copied"), 900);
+        });
+        list.appendChild(card);
+      });
+    });
+
+    if(!anyShown){
+      list.innerHTML = '<div class="empty-state">No formulas match "'+escapeHtml(q)+'".</div>';
+    }
+  }
+
+  function copyToClipboard(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).catch(()=>{});
+    }
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  document.getElementById("formula-search").addEventListener("input", e=>{
+    renderFormulas(e.target.value);
+  });
+
+  /* ---------------- Glossary ---------------- */
+  const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+  function renderGlossary(filterText){
+    const q = (filterText||"").trim().toLowerCase();
+    const list = document.getElementById("glossary-list");
+    list.innerHTML = "";
+    const availableLetters = new Set();
+    let lastLetter = null;
+    let anyShown = false;
+
+    GLOSSARY.forEach(entry=>{
+      const haystack = (entry.term+" "+entry.def+" "+(entry.anchor||"")).toLowerCase();
+      if(q && !haystack.includes(q)) return;
+      anyShown = true;
+      availableLetters.add(entry.letter);
+      if(entry.letter !== lastLetter){
+        const h = document.createElement("div");
+        h.className = "glossary-letter-header";
+        h.id = "letter-"+entry.letter;
+        h.textContent = entry.letter;
+        list.appendChild(h);
+        lastLetter = entry.letter;
+      }
+      const card = document.createElement("div");
+      card.className = "glossary-term-card";
+      card.innerHTML =
+        '<div class="glossary-term">'+escapeHtml(entry.term)+'</div>'+
+        '<div class="glossary-def">'+escapeHtml(entry.def)+'</div>'+
+        (entry.anchor ? '<div class="glossary-anchor">'+escapeHtml(entry.anchor)+'</div>' : '');
+      list.appendChild(card);
+    });
+
+    if(!anyShown){
+      list.innerHTML = '<div class="empty-state">No terms match "'+escapeHtml(q)+'".</div>';
+    }
+
+    renderAzRail(availableLetters, !!q);
+  }
+
+  function renderAzRail(availableLetters, isFiltering){
+    const rail = document.getElementById("az-rail");
+    rail.innerHTML = "";
+    ALPHABET.forEach(letter=>{
+      const span = document.createElement("span");
+      span.textContent = letter;
+      const has = availableLetters.has(letter);
+      if(!has || isFiltering){
+        span.className = "disabled";
+      }else{
+        span.addEventListener("click", ()=>{
+          const target = document.getElementById("letter-"+letter);
+          if(target) target.scrollIntoView({behavior:"smooth", block:"start"});
+        });
+      }
+      rail.appendChild(span);
+    });
+  }
+
+  document.getElementById("glossary-search").addEventListener("input", e=>{
+    renderGlossary(e.target.value);
+  });
+
+  /* ---------------- Resources ---------------- */
+  function renderResources(){
+    const list = document.getElementById("resource-list");
+    list.innerHTML = "";
+    RESOURCES.forEach(cat=>{
+      if(cat.items.length===0) return;
+      const h = document.createElement("div");
+      h.className = "resource-category-title";
+      h.textContent = cat.category;
+      list.appendChild(h);
+      cat.items.forEach(item=>{
+        const a = document.createElement("a");
+        a.className = "resource-card";
+        a.href = item.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.innerHTML =
+          '<span class="resource-arrow">↗</span>'+
+          '<div class="resource-name">'+escapeHtml(item.name)+'</div>'+
+          '<div class="resource-desc">'+escapeHtml(item.desc)+'</div>';
+        list.appendChild(a);
+      });
+    });
+  }
+
+  /* ---------------- Init ---------------- */
+  buildFilterOptions();
+  buildDeck();
+  renderDashboard();
+  renderFormulas("");
+  renderGlossary("");
+  renderResources();
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", ()=>{
+      navigator.serviceWorker.register("sw.js").catch(()=>{});
+    });
+  }
+})();
+</script>
+</body>
+</html>
